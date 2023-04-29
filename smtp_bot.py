@@ -109,9 +109,7 @@ async def check_code(message:types.Message, state:FSMContext):
     cursor.execute(f"SELECT * FROM verify_codes WHERE id = {message.from_user.id};")
     res = cursor.fetchall()
     if res != []:
-        # cursor.connection.commit()
         if int(message.text) == res[0][1]:
-            # cursor = db.cursor()
             cursor.execute(f"UPDATE users SET email = '{res[0][2]}' WHERE id = {message.from_user.id};")
             cursor.execute(f'UPDATE users SET balance = balance + 1000 WHERE id = {message.from_user.id};')
             cursor.connection.commit()
@@ -121,5 +119,9 @@ async def check_code(message:types.Message, state:FSMContext):
     else:
         await message.reply("Попробуйте еще раз")
     await state.finish()
+
+@dp.message_handler(commands=['profile'])
+async def get_profile(message:types.Message):
+    await message.answer("Привет")
 
 executor.start_polling(dp)
