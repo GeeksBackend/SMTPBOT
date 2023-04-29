@@ -86,8 +86,17 @@ async def send_verify_mail(message:types.Message, state:FSMContext):
     try:
         server.login(sender, password)
         server.send_message(msg)
+        cursor = db.cursor()
+        cursor.execute(f"SELECT * FROM verify_codes WHERE id = {message.from_user.id};")
+        res = cursor.fetchall()
+        if res == []:
+            cursor.execute(f"INSERT INTO verify_codes VALUES ({message.from_user.id}, {verify_code})")
+        else:
+            cursor.execute(f"UPDATE verify_codes SET code = {verify_code} WHERE id = {message.from_user.id};")
+        cursor.connection.commit()
         await message.answer("Код потверждения отправлена на почту")
     except Exception as error:
         await message.answer("Ошибка отправления")
+    await state.finish()
 
 executor.start_polling(dp)
