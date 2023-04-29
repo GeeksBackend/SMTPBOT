@@ -61,6 +61,7 @@ async def get_bonus(message:types.Message):
 
 class VerifyState(StatesGroup):
     email = State()
+    code = State()
 
 @dp.message_handler(commands=['verify'])
 async def verify_email(message:types.Message):
@@ -97,6 +98,22 @@ async def send_verify_mail(message:types.Message, state:FSMContext):
         await message.answer("Код потверждения отправлена на почту")
     except Exception as error:
         await message.answer("Ошибка отправления")
+    await message.answer("Введите код потверждения")
+    await VerifyState.code.set()
+
+@dp.message_handler(state=VerifyState)
+async def check_code(message:types.Message, state:FSMContext):
+    await message.answer("Начинаю проверку")
+    cursor = db.cursor()
+    cursor.execute(f"SELECT * FROM verify_codes WHERE id = {message.from_user.id};")
+    res = cursor.fetchall()
+    if res != []:
+        if int(message.text) == res[0][1]:
+            await message.reply("Все правильно")
+        else:
+            await message.reply("Неправильный код")
+    else:
+        await message.reply("Попробуйте еще раз")
     await state.finish()
 
 executor.start_polling(dp)
