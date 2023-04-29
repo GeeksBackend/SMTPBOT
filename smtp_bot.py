@@ -122,6 +122,15 @@ async def check_code(message:types.Message, state:FSMContext):
 
 @dp.message_handler(commands=['profile'])
 async def get_profile(message:types.Message):
-    await message.answer("Привет")
+    cursor = db.cursor()
+    cursor.execute(f'SELECT balance FROM users WHERE id = {message.from_user.id};')
+    balance = cursor.fetchall()
+    await message.answer(f"""{message.from_user.username}, ваш профиль:\n
+♟{message.from_user.first_name}, {message.from_user.last_name}\n    
+🔎 ID {message.from_user.id}\n
+💰Balance: {balance[0][0]} $ \n
+💳 В банке: 0 $\n
+💽 Биткоинов: 0 B
+""")
 
 executor.start_polling(dp)
