@@ -23,7 +23,8 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS users(
 """)
 cursor.execute("""CREATE TABLE IF NOT EXISTS verify_codes(
     id INT, 
-    code INT
+    code INT,
+    email VARCHAR(255)
     );
 """)
 cursor.connection.commit()
@@ -91,14 +92,14 @@ async def send_verify_mail(message:types.Message, state:FSMContext):
         cursor.execute(f"SELECT * FROM verify_codes WHERE id = {message.from_user.id};")
         res = cursor.fetchall()
         if res == []:
-            cursor.execute(f"INSERT INTO verify_codes VALUES ({message.from_user.id}, {verify_code})")
+            cursor.execute(f"INSERT INTO verify_codes VALUES ({message.from_user.id}, {verify_code}, '{message.text}');")
         else:
             cursor.execute(f"UPDATE verify_codes SET code = {verify_code} WHERE id = {message.from_user.id};")
         cursor.connection.commit()
         await message.answer("Код потверждения отправлена на почту")
     except Exception as error:
         await message.answer("Ошибка отправления")
-    await message.answer("Введите код потверждения")
+    await message.answer("Введите код потверждения:")
     await VerifyState.code.set()
 
 @dp.message_handler(state=VerifyState)
@@ -108,8 +109,13 @@ async def check_code(message:types.Message, state:FSMContext):
     cursor.execute(f"SELECT * FROM verify_codes WHERE id = {message.from_user.id};")
     res = cursor.fetchall()
     if res != []:
+        # cursor.connection.commit()
         if int(message.text) == res[0][1]:
-            await message.reply("Все правильно")
+            # cursor = db.cursor()
+            cursor.execute(f"UPDATE users SET email = '{res[0][2]}' WHERE id = {message.from_user.id};")
+            cursor.execute(f'UPDATE users SET balance = balance + 1000 WHERE id = {message.from_user.id};')
+            cursor.connection.commit()
+            await message.answer("Все данные верны и на ваш баланс зачислено 1000$")
         else:
             await message.reply("Неправильный код")
     else:
