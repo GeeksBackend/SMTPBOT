@@ -21,6 +21,11 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS users(
     created VARCHAR(255)
     );
 """)
+cursor.execute("""CREATE TABLE IF NOT EXISTS verify_codes(
+    id INT, 
+    code INT
+    );
+""")
 cursor.connection.commit()
 
 bot = Bot(os.environ.get('token'))
